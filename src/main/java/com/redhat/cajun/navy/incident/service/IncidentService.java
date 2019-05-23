@@ -10,12 +10,18 @@ import javax.transaction.Transactional;
 import com.redhat.cajun.navy.incident.dao.IncidentDao;
 import com.redhat.cajun.navy.incident.model.Incident;
 import com.redhat.cajun.navy.incident.model.IncidentStatus;
+import com.redhat.cajun.navy.incident.producer.IncidentCodec;
+import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.DeliveryOptions;
 
 @ApplicationScoped
 public class IncidentService {
 
     @Inject
     IncidentDao incidentDao;
+
+    @Inject
+    Vertx vertx;
 
     @Transactional
     public List<Incident> incidents() {
@@ -24,7 +30,13 @@ public class IncidentService {
 
     @Transactional
     public Incident create(Incident incident) {
+        incident.setId(UUID.randomUUID().toString());
+        incident.setTimestamp(System.currentTimeMillis());
         com.redhat.cajun.navy.incident.entity.Incident created = incidentDao.create(toEntity(incident));
+
+        DeliveryOptions options = new DeliveryOptions().setCodecName(new IncidentCodec().name());
+        vertx.eventBus().send("kafka-message-producer", incident, options);
+
         return fromEntity(created);
     }
 
@@ -66,18 +78,16 @@ public class IncidentService {
     }
 
     private com.redhat.cajun.navy.incident.entity.Incident toEntity(Incident incident) {
-        String reportedIncidentId = UUID.randomUUID().toString();
-        long reportedTimestamp = System.currentTimeMillis();
 
         return new com.redhat.cajun.navy.incident.entity.Incident.Builder()
-                        .incidentId(reportedIncidentId)
+                        .incidentId(incident.getId())
                         .latitude(incident.getLat())
                         .longitude(incident.getLon())
                         .medicalNeeded(incident.isMedicalNeeded())
                         .numberOfPeople(incident.getNumberOfPeople())
                         .victimName(incident.getVictimName())
                         .victimPhoneNumber(incident.getVictimPhoneNumber())
-                        .reportedTime(reportedTimestamp)
+                        .reportedTime(incident.getTimestamp())
                         .status(IncidentStatus.REPORTED.name())
                         .build();
     }

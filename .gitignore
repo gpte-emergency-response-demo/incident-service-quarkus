@@ -1,3 +1,5 @@
+ObjectStore/
+
 .idea/**/gradle.xml
 .idea/**/libraries
 
