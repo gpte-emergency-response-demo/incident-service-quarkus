@@ -36,6 +36,12 @@ public class IncidentDao {
         return incidents.get(0);
     }
 
+    public Incident merge(Incident incident) {
+        Incident r = entityManager.merge(incident);
+        entityManager.flush();
+        return r;
+    }
+
     public List<Incident> findByStatus(String status) {
         return entityManager.createNamedQuery("Incident.byStatus", Incident.class)
                 .setParameter("status", status.toUpperCase()).getResultList();

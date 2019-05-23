@@ -13,9 +13,13 @@ import com.redhat.cajun.navy.incident.model.IncidentStatus;
 import com.redhat.cajun.navy.incident.producer.IncidentCodec;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ApplicationScoped
 public class IncidentService {
+
+    private static final Logger log = LoggerFactory.getLogger(IncidentService.class);
 
     @Inject
     IncidentDao incidentDao;
@@ -38,6 +42,21 @@ public class IncidentService {
         vertx.eventBus().send("kafka-message-producer", incident, options);
 
         return fromEntity(created);
+    }
+
+    @Transactional
+    public void updateIncident(Incident incident) {
+        com.redhat.cajun.navy.incident.entity.Incident current = incidentDao.findByIncidentId(incident.getId());
+        if (current == null) {
+            log.warn("Incident with id '" + incident.getId() + "' not found in the database");
+            return;
+        }
+        com.redhat.cajun.navy.incident.entity.Incident toUpdate = toEntity(incident, current);
+        try {
+            incidentDao.merge(toUpdate);
+        } catch (Exception e) {
+            log.warn("Exception '" + e.getClass() + "' when updating Incident with id '" + incident.getId() + "'. Incident record is not updated.");
+        }
     }
 
     @Transactional
@@ -90,6 +109,24 @@ public class IncidentService {
                         .reportedTime(incident.getTimestamp())
                         .status(IncidentStatus.REPORTED.name())
                         .build();
+    }
+
+    private com.redhat.cajun.navy.incident.entity.Incident toEntity(Incident incident, com.redhat.cajun.navy.incident.entity.Incident current) {
+
+        if (incident == null) {
+            return null;
+        }
+        return new com.redhat.cajun.navy.incident.entity.Incident.Builder(current.getId(), current.getVersion())
+                .incidentId(incident.getId())
+                .latitude(incident.getLat() == null? current.getLatitude() : incident.getLat())
+                .longitude(incident.getLon() == null? current.getLongitude() : incident.getLon())
+                .medicalNeeded(incident.isMedicalNeeded() == null? current.isMedicalNeeded() : incident.isMedicalNeeded())
+                .numberOfPeople(incident.getNumberOfPeople() == null ? current.getNumberOfPeople() : incident.getNumberOfPeople())
+                .victimName(incident.getVictimName() == null? current.getVictimName() : incident.getVictimName())
+                .victimPhoneNumber(incident.getVictimPhoneNumber() == null? current.getVictimPhoneNumber() : incident.getVictimPhoneNumber())
+                .status(incident.getStatus() == null? current.getStatus() : incident.getStatus())
+                .reportedTime(current.getTimestamp())
+                .build();
     }
 
 }
