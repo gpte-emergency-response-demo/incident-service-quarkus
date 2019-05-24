@@ -19,7 +19,7 @@ public class Incident {
 
     private String victimPhoneNumber;
 
-    private long timestamp;
+    private Long timestamp;
 
     private String status;
 
@@ -138,7 +138,7 @@ public class Incident {
             return this;
         }
 
-        public Builder timestamp(long timestamp) {
+        public Builder timestamp(Long timestamp) {
             incident.timestamp = timestamp;
             return this;
         }

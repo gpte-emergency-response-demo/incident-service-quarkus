@@ -10,9 +10,7 @@ import javax.transaction.Transactional;
 import com.redhat.cajun.navy.incident.dao.IncidentDao;
 import com.redhat.cajun.navy.incident.model.Incident;
 import com.redhat.cajun.navy.incident.model.IncidentStatus;
-import com.redhat.cajun.navy.incident.producer.IncidentCodec;
 import io.vertx.core.Vertx;
-import io.vertx.core.eventbus.DeliveryOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,9 +35,6 @@ public class IncidentService {
         incident.setId(UUID.randomUUID().toString());
         incident.setTimestamp(System.currentTimeMillis());
         com.redhat.cajun.navy.incident.entity.Incident created = incidentDao.create(toEntity(incident));
-
-        DeliveryOptions options = new DeliveryOptions().setCodecName(new IncidentCodec().name());
-        vertx.eventBus().send("kafka-message-producer", incident, options);
 
         return fromEntity(created);
     }
