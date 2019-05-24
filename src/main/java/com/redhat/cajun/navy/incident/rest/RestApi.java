@@ -43,9 +43,10 @@ public class RestApi {
         router.post("/incidents/reset").handler(this::reset);
         router.post("/incidents").handler(this::create);
 
-        vertx.createHttpServer().requestHandler(router).rxListen(8080)
-            .subscribe(h -> log.info("Http Server started successfully"),
-                    t -> log.error("Error when starting Http server", t));
+        vertx.createHttpServer().requestHandler(router)
+                .rxListen( config.getOptionalValue("http.server.port", Integer.class).orElse(8080))
+                .subscribe(h -> log.info("Http Server started successfully"),
+                        t -> log.error("Error when starting Http server", t));
 
         vertx.eventBus().registerCodec(new IncidentCodec());
 
