@@ -53,8 +53,8 @@ public class IncidentCodec implements MessageCodec<Buffer, Incident> {
 
     public Incident fromJsonObject(JsonObject jsonObject) {
         return new Incident.Builder(jsonObject.getString("id"))
-                .lat(jsonObject.getString("lat"))
-                .lon(jsonObject.getString("lon"))
+                .lat(jsonObject.getDouble("lat").toString())
+                .lon(jsonObject.getDouble("lon").toString())
                 .medicalNeeded(jsonObject.getBoolean("medicalNeeded"))
                 .numberOfPeople(jsonObject.getInteger("numberOfPeople"))
                 .victimName(jsonObject.getString("victimName"))
