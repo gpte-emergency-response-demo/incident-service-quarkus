@@ -47,10 +47,32 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-smallrye-reactive-messaging</artifactId>
+      <exclusions>
+        <exclusion>
+          <artifactId>smallrye-reactive-messaging-provider</artifactId>
+          <groupId>io.smallrye.reactive</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>io.smallrye.reactive</groupId>
+      <artifactId>smallrye-reactive-messaging-provider</artifactId>
+      <version>0.0.9</version>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-smallrye-reactive-messaging-kafka</artifactId>
+      <exclusions>
+        <exclusion>
+          <artifactId>smallrye-reactive-messaging-kafka</artifactId>
+          <groupId>io.smallrye.reactive</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>io.smallrye.reactive</groupId>
+      <artifactId>smallrye-reactive-messaging-kafka</artifactId>
+      <version>0.0.9</version>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
