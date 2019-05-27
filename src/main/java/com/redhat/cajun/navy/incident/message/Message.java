@@ -2,6 +2,9 @@ package com.redhat.cajun.navy.incident.message;
 
 import java.util.UUID;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
+@RegisterForReflection
 public class Message<T> {
 
     private String id;

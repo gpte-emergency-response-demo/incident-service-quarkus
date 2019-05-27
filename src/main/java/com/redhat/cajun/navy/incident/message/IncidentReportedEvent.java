@@ -2,6 +2,9 @@ package com.redhat.cajun.navy.incident.message;
 
 import java.math.BigDecimal;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
+@RegisterForReflection
 public class IncidentReportedEvent {
 
     private String id;
