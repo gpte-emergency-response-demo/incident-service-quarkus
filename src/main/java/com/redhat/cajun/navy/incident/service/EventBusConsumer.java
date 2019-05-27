@@ -13,7 +13,7 @@ import javax.json.bind.JsonbBuilder;
 import com.redhat.cajun.navy.incident.message.IncidentReportedEvent;
 import com.redhat.cajun.navy.incident.model.Incident;
 import io.quarkus.vertx.ConsumeEvent;
-import io.reactivex.processors.UnicastProcessor;
+import io.reactivex.processors.BehaviorProcessor;
 import io.smallrye.reactive.messaging.kafka.KafkaMessage;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -21,18 +21,14 @@ import io.vertx.reactivex.core.eventbus.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @ApplicationScoped
 public class EventBusConsumer {
 
-    private static Logger log = LoggerFactory.getLogger(EventBusConsumer.class);
-
     @Inject
     IncidentService service;
 
-    private UnicastProcessor<Incident> processor = UnicastProcessor.create();
+    private BehaviorProcessor<Incident> processor = BehaviorProcessor.create();
 
     private IncidentCodec codec = new IncidentCodec();
 
@@ -118,7 +114,6 @@ public class EventBusConsumer {
     }
 
     private CompletionStage<org.eclipse.microprofile.reactive.messaging.Message<String>> toMessage(Incident incident) {
-        log.info("Sending Message");
         com.redhat.cajun.navy.incident.message.Message<IncidentReportedEvent> message
                 = new com.redhat.cajun.navy.incident.message.Message.Builder<>("IncidentReportedEvent", "IncidentService",
                     new IncidentReportedEvent.Builder(incident.getId())
@@ -131,7 +126,6 @@ public class EventBusConsumer {
                 .build();
         Jsonb jsonb = JsonbBuilder.create();
         String json = jsonb.toJson(message);
-        log.info("Message:" + json);
         CompletableFuture<org.eclipse.microprofile.reactive.messaging.Message<String>> future = new CompletableFuture<>();
         KafkaMessage<String, String> kafkaMessage = KafkaMessage.of(incident.getId(), json);
         future.complete(kafkaMessage);
