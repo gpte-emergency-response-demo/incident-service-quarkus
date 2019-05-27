@@ -10,7 +10,6 @@ import javax.transaction.Transactional;
 import com.redhat.cajun.navy.incident.dao.IncidentDao;
 import com.redhat.cajun.navy.incident.model.Incident;
 import com.redhat.cajun.navy.incident.model.IncidentStatus;
-import io.vertx.core.Vertx;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,9 +20,6 @@ public class IncidentService {
 
     @Inject
     IncidentDao incidentDao;
-
-    @Inject
-    Vertx vertx;
 
     @Transactional
     public List<Incident> incidents() {
