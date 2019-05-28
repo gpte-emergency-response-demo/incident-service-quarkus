@@ -21,9 +21,13 @@ import io.vertx.reactivex.core.eventbus.Message;
 import org.eclipse.microprofile.reactive.messaging.Outgoing;
 import org.eclipse.microprofile.reactive.streams.operators.PublisherBuilder;
 import org.eclipse.microprofile.reactive.streams.operators.ReactiveStreams;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ApplicationScoped
 public class EventBusConsumer {
+
+    private static Logger log = LoggerFactory.getLogger(EventBusConsumer.class);
 
     @Inject
     IncidentService service;
@@ -100,7 +104,10 @@ public class EventBusConsumer {
 
     private void createIncident(Message<Incident> msg) {
         Incident created = service.create(msg.body());
-        processor.onNext(created);
+        boolean success = false;
+        while (!success) {
+            success = processor.offer(created);
+        }
         msg.reply(new JsonObject());
     }
 
@@ -126,6 +133,7 @@ public class EventBusConsumer {
                 .build();
         Jsonb jsonb = JsonbBuilder.create();
         String json = jsonb.toJson(message);
+        log.info("Message: " + json);
         CompletableFuture<org.eclipse.microprofile.reactive.messaging.Message<String>> future = new CompletableFuture<>();
         KafkaMessage<String, String> kafkaMessage = KafkaMessage.of(incident.getId(), json);
         future.complete(kafkaMessage);
