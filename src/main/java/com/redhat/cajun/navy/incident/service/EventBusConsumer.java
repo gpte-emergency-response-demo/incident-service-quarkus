@@ -36,28 +36,27 @@ public class EventBusConsumer {
 
     private IncidentCodec codec = new IncidentCodec();
 
-    @SuppressWarnings("unchecked")
     @ConsumeEvent(value = "incident-service", blocking = true)
-    public void consume(Message<?> msg) {
+    public void consume(Message<JsonObject> msg) {
         String action = msg.headers().get("action");
         switch (action) {
             case "incidents" :
-                incidents((Message<JsonObject>) msg);
+                incidents(msg);
                 break;
             case "incidentById" :
-                incidentById((Message<JsonObject>) msg);
+                incidentById(msg);
                 break;
             case "incidentsByStatus":
-                incidentsByStatus((Message<JsonObject>) msg);
+                incidentsByStatus(msg);
                 break;
             case "incidentsByName":
-                incidentsByName((Message<JsonObject>) msg);
+                incidentsByName(msg);
                 break;
             case "reset" :
-                reset((Message<JsonObject>) msg);
+                reset(msg);
                 break;
             case "createIncident":
-                createIncident((Message<Incident>) msg);
+                createIncident(msg);
                 break;
             default:
                 msg.fail(-1, "Unsupported operation");
@@ -102,8 +101,8 @@ public class EventBusConsumer {
         msg.reply(new JsonObject());
     }
 
-    private void createIncident(Message<Incident> msg) {
-        Incident created = service.create(msg.body());
+    private void createIncident(Message<JsonObject> msg) {
+        Incident created = service.create(codec.fromJsonObject(msg.body()));
         boolean success = false;
         while (!success) {
             success = processor.offer(created);
