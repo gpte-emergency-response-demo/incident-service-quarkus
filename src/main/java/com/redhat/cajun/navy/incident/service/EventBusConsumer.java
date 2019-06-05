@@ -13,7 +13,8 @@ import javax.json.bind.JsonbBuilder;
 import com.redhat.cajun.navy.incident.message.IncidentReportedEvent;
 import com.redhat.cajun.navy.incident.model.Incident;
 import io.quarkus.vertx.ConsumeEvent;
-import io.reactivex.processors.BehaviorProcessor;
+import io.reactivex.processors.FlowableProcessor;
+import io.reactivex.processors.UnicastProcessor;
 import io.smallrye.reactive.messaging.kafka.KafkaMessage;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -32,32 +33,33 @@ public class EventBusConsumer {
     @Inject
     IncidentService service;
 
-    private BehaviorProcessor<Incident> processor = BehaviorProcessor.create();
+    private FlowableProcessor<Incident> processor = UnicastProcessor.<Incident>create().toSerialized();
+
+    private Object lock = new Object();
 
     private IncidentCodec codec = new IncidentCodec();
 
-    @SuppressWarnings("unchecked")
     @ConsumeEvent(value = "incident-service", blocking = true)
-    public void consume(Message<?> msg) {
+    public void consume(Message<JsonObject> msg) {
         String action = msg.headers().get("action");
         switch (action) {
             case "incidents" :
-                incidents((Message<JsonObject>) msg);
+                incidents(msg);
                 break;
             case "incidentById" :
-                incidentById((Message<JsonObject>) msg);
+                incidentById(msg);
                 break;
             case "incidentsByStatus":
-                incidentsByStatus((Message<JsonObject>) msg);
+                incidentsByStatus(msg);
                 break;
             case "incidentsByName":
-                incidentsByName((Message<JsonObject>) msg);
+                incidentsByName(msg);
                 break;
             case "reset" :
-                reset((Message<JsonObject>) msg);
+                reset(msg);
                 break;
             case "createIncident":
-                createIncident((Message<Incident>) msg);
+                createIncident(msg);
                 break;
             default:
                 msg.fail(-1, "Unsupported operation");
@@ -102,12 +104,9 @@ public class EventBusConsumer {
         msg.reply(new JsonObject());
     }
 
-    private void createIncident(Message<Incident> msg) {
-        Incident created = service.create(msg.body());
-        boolean success = false;
-        while (!success) {
-            success = processor.offer(created);
-        }
+    private void createIncident(Message<JsonObject> msg) {
+        Incident created = service.create(codec.fromJsonObject(msg.body()));
+        processor.onNext(created);
         msg.reply(new JsonObject());
     }
 
@@ -133,7 +132,7 @@ public class EventBusConsumer {
                 .build();
         Jsonb jsonb = JsonbBuilder.create();
         String json = jsonb.toJson(message);
-        log.info("Message: " + json);
+        log.debug("Message: " + json);
         CompletableFuture<org.eclipse.microprofile.reactive.messaging.Message<String>> future = new CompletableFuture<>();
         KafkaMessage<String, String> kafkaMessage = KafkaMessage.of(incident.getId(), json);
         future.complete(kafkaMessage);
