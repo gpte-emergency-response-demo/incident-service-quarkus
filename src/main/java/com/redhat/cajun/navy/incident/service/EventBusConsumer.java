@@ -13,7 +13,8 @@ import javax.json.bind.JsonbBuilder;
 import com.redhat.cajun.navy.incident.message.IncidentReportedEvent;
 import com.redhat.cajun.navy.incident.model.Incident;
 import io.quarkus.vertx.ConsumeEvent;
-import io.reactivex.processors.BehaviorProcessor;
+import io.reactivex.processors.FlowableProcessor;
+import io.reactivex.processors.UnicastProcessor;
 import io.smallrye.reactive.messaging.kafka.KafkaMessage;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -32,7 +33,9 @@ public class EventBusConsumer {
     @Inject
     IncidentService service;
 
-    private BehaviorProcessor<Incident> processor = BehaviorProcessor.create();
+    private FlowableProcessor<Incident> processor = UnicastProcessor.<Incident>create().toSerialized();
+
+    private Object lock = new Object();
 
     private IncidentCodec codec = new IncidentCodec();
 
@@ -103,10 +106,7 @@ public class EventBusConsumer {
 
     private void createIncident(Message<JsonObject> msg) {
         Incident created = service.create(codec.fromJsonObject(msg.body()));
-        boolean success = false;
-        while (!success) {
-            success = processor.offer(created);
-        }
+        processor.onNext(created);
         msg.reply(new JsonObject());
     }
 
@@ -132,7 +132,7 @@ public class EventBusConsumer {
                 .build();
         Jsonb jsonb = JsonbBuilder.create();
         String json = jsonb.toJson(message);
-        log.info("Message: " + json);
+        log.debug("Message: " + json);
         CompletableFuture<org.eclipse.microprofile.reactive.messaging.Message<String>> future = new CompletableFuture<>();
         KafkaMessage<String, String> kafkaMessage = KafkaMessage.of(incident.getId(), json);
         future.complete(kafkaMessage);
