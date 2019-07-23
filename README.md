@@ -1,3 +1,3 @@
-# Incident Service for the Red Hat Cajun Navy Demo 
+# GPTE - Incident Service for the Red Hat Cajun Navy Demo 
 
 Quarkus implementation
